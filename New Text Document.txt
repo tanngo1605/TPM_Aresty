@@ -1,0 +1,24 @@
+Put them into the same graph, 
+
+analyze the autocorreleation graph, , 
+https://en.wikipedia.org/wiki/Correlation_function_(statistical_mechanics)
+
+gaussian fit of linear and non-linear spring
+
+how to quantify the simulation?
+
+
+new paper: statistical physics and mesoscopic modeling to interpret tethered particle motion experiments
+
+
+find out if this approach is correct
+(the persistence length)
+
+look more on paper if they use the same appoarch
+
+new paper: statistical physics and mesoscopic modeling to interpret tethered particle motion experiments
+what type of simulation (sumary)
+
+
+COmpare the auto correlation function: 
+Read new paper to figure how they use experiment
