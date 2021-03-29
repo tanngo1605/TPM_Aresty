@@ -13,11 +13,11 @@ close all;
 %TetheredParticleAnalysis_Version2(xData, 200, 200, 0.5e-12 ,[0.3, 0.65], 0.01);
 %figure;
 %f <= 25N ~ deltal = 0.001
-laserForce = 15e-12; %Newton
-appliedRange = [0.2, 0.86];
+laserForce = 20e-12; %Newton
+appliedRange = [0.33, 0.66];
 %TetheredParticleAnalysis_Version2(xData, 500, 150, laserForce ,appliedRange, 0.0001);
 %TetheredParticleAnalysis_WithDependentTimestep(200, 100, laserForce,pi/4, appliedRange, 0.0000001, 50000*2);
-TetheredParticleAnalysis_WithDependentTimestep_3D(200, 100, laserForce,0, 0, appliedRange, 0.001, 35000);
+TetheredParticleAnalysis_WithDependentTimestep_3D(200, 100, laserForce,0 ,0 , appliedRange, 0.01, 2000);
 %The problem that makes extension exceeds Lo is that we chose too large
 %time step
 %Becuase of that, it's not continous enough to simulate the extendsion
