@@ -1,19 +1,10 @@
-%expand to 3dim
-%change the Marko SIgga model
 
-function TetheredParticleAnalysis_WithDependentTimestep_3D (Ncorr,Nbins, fLaser,alpha, beta,appliedRange,deltat,datapoints)
+function TetheredParticleAnalysis_WithDependentTimestep_3D (fLaser,alpha,beta,appliedRange,deltat,datapoints, Lo, Rb, eta, temperature)
 %theta: angle with z axis
 %phi: angle in x0y plane
 %alpha: angle of force with z axis
 %beta: angle of the force in xOy plane.
 
-
-%This function simulates and analyzes the motion of a 1D random walk
-%confined in a harmonic potential well.
-%
-%Written by Luke Sullivan, Ursinus College
-%Edited by John F. Beausang, University of Pennsylvania
-%
 %Xdata    = array of bead position (nm)
 %nCorr    = number of points in correlation function
 %Nbins    = number of histogram bins
@@ -27,7 +18,7 @@ time      = (1:n)*deltat;     %time series
 %logACData = LogAutoCorr(Xdata,Ncorr,deltat);
 
 %%%%Simulated data%%%%
-[Xsim, Ysim,Zsim, FullExtension, AngleThetaSimDegree, AnglePhiSimDegree, DNAForce] = RandWalkSim(n, fLaser,alpha, beta, appliedRange);  %generate simulated data
+[Xsim,Ysim,Zsim, FullExtension, AngleThetaSimDegree, AnglePhiSimDegree, DNAForce] = RandWalkSim(n, fLaser,alpha, beta, appliedRange, Lo, Rb, eta, temperature);  %generate simulated data
 %[FSimX,rSimX,histoSimX] = GaussHistoX(Xsim,Nbins);
 %[FSimY,rSimY,histoSimY] = GaussHistoX(Ysim,Nbins);
 
@@ -94,64 +85,30 @@ ylabel ('Magnitude (N)');
 % zlabel('z')
 % grid on
 
-
-%%%%Subroutines%%%%%
-
-function [F,r,Xhisto]=GaussHistoX (Xdata,Nbins)
-%This function histograms the data and fits a Gaussian distribution
-Xmax        = max(abs(Xdata));  %maximum position
-n           = length(Xdata);    %number of data points
-binWidth    = Xmax/Nbins;       %histogram bin width
-stdevX      = std(Xdata);       %standard deviation of data
-F=zeros(1,n);r=zeros(1,n);Xhisto=zeros(2,Nbins+1);  %initialize
-Xhisto(1,:)= ((1:Nbins+1)-.5)*binWidth;     %midpoint of histogram bins
-for i=1:n
-    r(i)=abs(Xdata(i));
-    F(i)=2/sqrt(2*pi*stdevX^2)*exp(-(Xdata(i)^2)/(2*stdevX^2));%1 sided gaussian curve
-    which=1+floor(abs(Xdata(i))/binWidth);  %which bin data falls into
-    if (which > 0)
-    Xhisto(2,which)=Xhisto(2,which)+1;%increment bin
-    end
-    %temporary ignore
-end
-Xhisto(2,:)=Xhisto(2,:)/n/binWidth; %convert counts to probability (1/nm)
-
-function logac = LogAutoCorr (Xdata,Ncorr,deltat)
-%This function determines the autocorrelation of the data for Ncorr points
-n         = length(Xdata);
-logac     = zeros(2,Ncorr);
-logac(1,:)= (0:Ncorr-1)*deltat;      %time steps
-for s = 1:Ncorr
-    temp = zeros (1,n-s+1);
-    for i=1:(n-s+1)
-        temp(i)=Xdata(i)*Xdata(i+s-1);
-    end
-    logac(2,s)=log10(sum(temp)/(n-s+1));
-end
-function force = Marko_Sigga (kbT, Lp, Lo, extension, direction, axis, angleTheta, anglePhi)
-d=1.6;
-kbT = kbT * 10^21;
-Ko = 16*kbT * Lp * d^-2;
-extension = abs(extension);
-func=@(extension, Fe) kbT/Lp*(1/4*1/(1-extension/Lo+Fe/Ko)^2-1/4+extension/Lo-Fe/Ko)-Fe;
-tempFunc = @(Fe) func(extension, Fe);
-tempForce = fzero(tempFunc,63)/10^21;
-
-if (direction>0)
-    tempForce = -1.0*tempForce;
-else
-    tempForce = 1.0*tempForce;
-end
-if (axis == 'x')
-    tempForce = tempForce*abs(sin(angleTheta)*cos(anglePhi));
-end
-if (axis == 'y')
-    tempForce = tempForce*abs(sin(angleTheta)*sin(anglePhi));
-end
-if (axis == 'z')
-    tempForce = tempForce*abs(cos(angleTheta));
-end
-force = tempForce;
+% function force = Marko_Sigga (kbT, Lp, Lo, extension, direction, axis, angleTheta, anglePhi)
+% d=1.6;
+% kbT = kbT * 10^21;
+% Ko = 16*kbT * Lp * d^-2;
+% extension = abs(extension);
+% func=@(extension, Fe) kbT/Lp*(1/4*1/(1-extension/Lo+Fe/Ko)^2-1/4+extension/Lo-Fe/Ko)-Fe;
+% tempFunc = @(Fe) func(extension, Fe);
+% tempForce = fzero(tempFunc,63)/10^21;
+% 
+% if (direction>0)
+%     tempForce = -1.0*tempForce;
+% else
+%     tempForce = 1.0*tempForce;
+% end
+% if (axis == 'x')
+%     tempForce = tempForce*abs(sin(angleTheta)*cos(anglePhi));
+% end
+% if (axis == 'y')
+%     tempForce = tempForce*abs(sin(angleTheta)*sin(anglePhi));
+% end
+% if (axis == 'z')
+%     tempForce = tempForce*abs(cos(angleTheta));
+% end
+% force = tempForce;
 
 
 % function force = Marko_Sigga (kbT, Lp, Lo, extension, direction, axis, angleTheta, anglePhi)
@@ -188,20 +145,20 @@ force = tempForce;
 %         newPos= -999;
 %     end
     
-function nextTimeStep = getNextTimestep(sita, Lp, Lo, x, kbT) 
-       constantCoeff = kbT/(Lp*Lo);
-       change = 0.5/((1 - x/Lo)^3) + 1;
-        gradient = abs(constantCoeff*change);
-        nextTimeStep = (2*0.01 * sita) / gradient;
+% function nextTimeStep = getNextTimestep(sita, Lp, Lo, x, kbT) 
+%        constantCoeff = kbT/(Lp*Lo);
+%        change = 0.5/((1 - x/Lo)^3) + 1;
+%         gradient = abs(constantCoeff*change);
+%         nextTimeStep = (2*0.01 * sita) / gradient;
         
-function dragCoefXY = getDragCoefXY(r, z, sita0)
-ratio = r/z;
-denom = 1 - (9/16)*ratio + (1/8)*ratio^3 - (45/256)*ratio^4 - (1/16)*ratio^5;
-dragCoefXY = sita0 / denom;
-function dragCoefZ = getDragCoefZ(r, z, sita0)
-ratio = r/z;
-denom = 1 - (9/8)*ratio + 0.5*ratio^3 - 0.57*ratio^4 + 0.2*ratio^5 + (7/200)*ratio^11 - (1/25)*ratio^12;
-dragCoefZ = sita0 / denom;
+% function dragCoefXY = getDragCoefXY(r, z, sita0)
+% ratio = r/z;
+% denom = 1 - (9/16)*ratio + (1/8)*ratio^3 - (45/256)*ratio^4 - (1/16)*ratio^5;
+% dragCoefXY = sita0 / denom;
+% function dragCoefZ = getDragCoefZ(r, z, sita0)
+% ratio = r/z;
+% denom = 1 - (9/8)*ratio + 0.5*ratio^3 - 0.57*ratio^4 + 0.2*ratio^5 + (7/200)*ratio^11 - (1/25)*ratio^12;
+% dragCoefZ = sita0 / denom;
 % function nextTimeStep = getNextTimestep(kbT, sita, Lp, Lo, extension, extensionX, extensionY, extensionZ, curForce )
 %     kbT = kbT * 10^21;
 %     d=1.6;
@@ -222,19 +179,19 @@ dragCoefZ = sita0 / denom;
 %     
 %     nextTimeStep = (2*0.01 * sita) / gradient;
 
-function [Xsim, Ysim, Zsim, FullExtension, AngleSimThetaDegree , AngleSimPhiDegree, DNAForce]=RandWalkSim(n,fLaser,alpha, beta,appliedRange)
+function [Xsim, Ysim, Zsim, FullExtension, AngleSimThetaDegree , AngleSimPhiDegree, DNAForce]=RandWalkSim(n,fLaser,alpha, beta,appliedRange, Lo, Rb, eta, temperature)
 %This function simulates a 1D random walk in a harmonic potential
 %%%%physical parameters%%%%
-Lo       = 3477*.34;            % Lo = tether length (nm) = 1182.18
+% Lo       = 3477*.34;            % Lo = tether length (nm) = 1182.18
 Lp      = 72;                   % Lp = tether persistence length (nm)
-Rb      = 240;                  %bead radius (nm)
-Rb = 50;
+% Rb      = 240;                  %bead radius (nm)
+% Rb = 50;
 %change to dynamic kbT = k * T
-kbT     = 4.1*10^(-21);         %thermal energy (J)
-eta     = 2.4*10^(-30);         %viscosity of H2O (J*s/nm^3)
+% kbT     = 4.1*10^(-21);         %thermal energy (J)
+kbT = (1.38*10^-23) * (temperature + 273);
+% eta     = 2.4*10^(-30);         %viscosity of H2O (J*s/nm^3)
 D       = kbT/(6*pi*eta*Rb);    %Stokes diffusion constant (nm2/s)
 sita0    = 6*pi*eta*Rb;          %drag coefficient, correct for close proximity for surface. FAXEN's law, 
-kappa   = 3/2*kbT/Lp/Lo;        %spring constant (J/nm2)
 deltat = getNextTimestep(sita0, Lp, Lo, 0, kbT);
 %deltat = 0.001;
 Xsim=zeros(1,n);
