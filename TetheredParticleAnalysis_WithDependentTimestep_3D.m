@@ -5,26 +5,16 @@ function TetheredParticleAnalysis_WithDependentTimestep_3D (fLaser,alpha,beta,ap
 %alpha: angle of force with z axis
 %beta: angle of the force in xOy plane.
 
-%Xdata    = array of bead position (nm)
-%nCorr    = number of points in correlation function
-%Nbins    = number of histogram bins
-%deltat   = time step of data and simulation (sec)
-
-%%%%Experimental Data%%%%
-%Xdata     = transpose(Xdata); 
 n         = datapoints;    %number of data points
-time      = (1:n)*deltat;     %time series
-%[FData,rData,histoData] = GaussHistoX(Xdata,Nbins);
-%logACData = LogAutoCorr(Xdata,Ncorr,deltat);
+%This line of code might not be needed
+time = (1:n)*deltat;
 
 %%%%Simulated data%%%%
-[Xsim,Ysim,Zsim, FullExtension, AngleThetaSimDegree, AnglePhiSimDegree, DNAForce] = RandWalkSim(n, fLaser,alpha, beta, appliedRange, Lo, Rb, eta, temperature);  %generate simulated data
-%[FSimX,rSimX,histoSimX] = GaussHistoX(Xsim,Nbins);
-%[FSimY,rSimY,histoSimY] = GaussHistoX(Ysim,Nbins);
+[Xsim,Ysim,Zsim, FullExtension, AngleThetaSimDegree, AnglePhiSimDegree, DNAForce, timeline] = RandWalkSim(n, fLaser,alpha, beta, appliedRange, Lo, Rb, eta, temperature);  %generate simulated data
 
-%logACSim = LogAutoCorr (Xsim,Ncorr,deltat);
 
 %%%%output%%%%
+time = timeline;%time series
 subplot(3,3,1);
 plot(time,Xsim,'b')%Experimental data
 title ('X coordinate data');
@@ -68,118 +58,8 @@ title ('Stretching DNA force');
 xlabel ('Time (sec)');
 ylabel ('Magnitude (N)');
 
-% figure
-% subplot(1,1,1);
-% for timeStep = 1:n
-%    if (timeStep > appliedRange(1)*n && timeStep < appliedRange(2)*n)
-%        plot3(Xsim(timeStep), Ysim(timeStep), Zsim(timeStep), 'r.');
-%    else
-%        plot3(Xsim(timeStep), Ysim(timeStep), Zsim(timeStep), 'b.');
-%    end
-%    pause(0.05);
-%    hold on;
-% end
-% title ('Position');
-% xlabel ('x');
-% ylabel ('y');
-% zlabel('z')
-% grid on
 
-% function force = Marko_Sigga (kbT, Lp, Lo, extension, direction, axis, angleTheta, anglePhi)
-% d=1.6;
-% kbT = kbT * 10^21;
-% Ko = 16*kbT * Lp * d^-2;
-% extension = abs(extension);
-% func=@(extension, Fe) kbT/Lp*(1/4*1/(1-extension/Lo+Fe/Ko)^2-1/4+extension/Lo-Fe/Ko)-Fe;
-% tempFunc = @(Fe) func(extension, Fe);
-% tempForce = fzero(tempFunc,63)/10^21;
-% 
-% if (direction>0)
-%     tempForce = -1.0*tempForce;
-% else
-%     tempForce = 1.0*tempForce;
-% end
-% if (axis == 'x')
-%     tempForce = tempForce*abs(sin(angleTheta)*cos(anglePhi));
-% end
-% if (axis == 'y')
-%     tempForce = tempForce*abs(sin(angleTheta)*sin(anglePhi));
-% end
-% if (axis == 'z')
-%     tempForce = tempForce*abs(cos(angleTheta));
-% end
-% force = tempForce;
-
-
-% function force = Marko_Sigga (kbT, Lp, Lo, extension, direction, axis, angleTheta, anglePhi)
-% extension = abs(extension);
-% coff = (kbT)/(Lp)*1.0;
-% % J /nm = J/ 10-9 m = J*10(9)/m 
-% something = 4.0*(1-extension/Lo)*(1-extension/Lo);
-% %change = 1/(4*(1 - extension/Lo)^2) - 1/4 + extension/Lo;
-% change = 1.0/something - 1.0/4 + 1.0*extension/Lo;
-% %Should be < 65pN
-% %tempForce = coff*change;
-% tempForce = 0;
-% if (direction>0)
-%     tempForce = -1.0*coff*change;
-% else
-%     tempForce = 1.0*coff*change;
-% end
-% if (axis == 'x')
-%     tempForce = tempForce*abs(sin(angleTheta)*cos(anglePhi));
-% end
-% if (axis == 'y')
-%     tempForce = tempForce*abs(sin(angleTheta)*sin(anglePhi));
-% end
-% if (axis == 'z')
-%     tempForce = tempForce*abs(cos(angleTheta));
-% end
-% force = tempForce;
-% 
-% function newPos = validPosition(position)
-%     if (pos/ition > 1000) 
-%         newPos = 999;
-%     end
-%     if (position < -1000) 
-%         newPos= -999;
-%     end
-    
-% function nextTimeStep = getNextTimestep(sita, Lp, Lo, x, kbT) 
-%        constantCoeff = kbT/(Lp*Lo);
-%        change = 0.5/((1 - x/Lo)^3) + 1;
-%         gradient = abs(constantCoeff*change);
-%         nextTimeStep = (2*0.01 * sita) / gradient;
-        
-% function dragCoefXY = getDragCoefXY(r, z, sita0)
-% ratio = r/z;
-% denom = 1 - (9/16)*ratio + (1/8)*ratio^3 - (45/256)*ratio^4 - (1/16)*ratio^5;
-% dragCoefXY = sita0 / denom;
-% function dragCoefZ = getDragCoefZ(r, z, sita0)
-% ratio = r/z;
-% denom = 1 - (9/8)*ratio + 0.5*ratio^3 - 0.57*ratio^4 + 0.2*ratio^5 + (7/200)*ratio^11 - (1/25)*ratio^12;
-% dragCoefZ = sita0 / denom;
-% function nextTimeStep = getNextTimestep(kbT, sita, Lp, Lo, extension, extensionX, extensionY, extensionZ, curForce )
-%     kbT = kbT * 10^21;
-%     d=1.6;
-%     Ko = 16*kbT * Lp * d^-2;
-%     myFunc = @(extension, componentExtension,curForce, devF) kbT/Lp * ( -0.5* 1/(1 - extension/Lo + curForce/Ko )^3 * (1 - componentExtension/(extension*Lo) + devF/Ko) + componentExtension/(extension*Lo) - devF/Ko) - devF;
-%     
-%     tempFunc = @(devF) myFunc(extension, extensionX, curForce, devF);
-%     devF_X = fzero(tempFunc,0);
-%     
-%     tempFunc = @(devF) myFunc(extension, extensionY, curForce, devF);
-%     devF_Y = fzero(tempFunc,0);
-%     
-%     tempFunc = @(devF) myFunc(extension, extensionZ, curForce, devF);
-%     devF_Z = fzero(tempFunc,0);
-%     
-%     gradient = sqrt(devF_X^2 + devF_Y^2 + devF_Z^2);
-%     
-%     
-%     nextTimeStep = (2*0.01 * sita) / gradient;
-
-function [Xsim, Ysim, Zsim, FullExtension, AngleSimThetaDegree , AngleSimPhiDegree, DNAForce]=RandWalkSim(n,fLaser,alpha, beta,appliedRange, Lo, Rb, eta, temperature)
+function [Xsim, Ysim, Zsim, FullExtension, AngleSimThetaDegree , AngleSimPhiDegree, DNAForce, timeline]=RandWalkSim(n,fLaser,alpha, beta,appliedRange, Lo, Rb, eta, temperature)
 %This function simulates a 1D random walk in a harmonic potential
 %%%%physical parameters%%%%
 % Lo       = 3477*.34;            % Lo = tether length (nm) = 1182.18
@@ -207,6 +87,8 @@ AngleThetaSim = AngleThetaSim + pi/2;
 AngleSimThetaDegree = zeros(1,n);
 AngleSimPhiDegree = zeros(1,n);
 
+timeline = zeros(1, n);
+
 for i=2:n
     %put a constant external force, ex: 0.3 pN
     fTemp = 0;
@@ -215,6 +97,7 @@ for i=2:n
     else
         fTemp = 0;
     end
+    timeline(i) = timeline(i-1) + deltat;
     extensionX = Xsim(i-1);
     extensionY = Ysim(i-1);
     extensionZ =(Zsim(i-1));
@@ -278,13 +161,6 @@ for i=2:n
     else sita = sitaZ;
     end
      deltat = getNextTimestep(sita, Lp, Lo, extension, kbT);
-%      if (extension > 0)
-%      deltat = getNextTimestep(kbT, sita, Lp, Lo, extension, abs(extensionX),abs(extensionY),abs(extensionZ), sqrt(DNAForceX^2 + DNAForceY^2 + DNAForceZ^2)*10^21);
-%      else
-%          deltat = 0.0001;
-%      end
-%      time(i) = time(i-1) + deltat;
-  
   
     
 end
